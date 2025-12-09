@@ -3,15 +3,10 @@ Day 7: Laboratories
 https://adventofcode.com/2025/day/7
 """
 
-from collections import deque
-from typing import NamedTuple
+from collections import defaultdict
+from functools import cache
 
 INPUT = "inputs/day07.txt"
-
-
-class Location(NamedTuple):
-    row: int
-    column: int
 
 
 def read_input():
@@ -19,33 +14,46 @@ def read_input():
         return [line.strip() for line in f.readlines()]
 
 
-def part1():
-    start_row, *rows = read_input()
+@cache
+def simulate_beams():
+    rows = read_input()
 
-    start_column = start_row.index("S")
-    beam_columns = set([start_column])
+    initial_beam_column = rows[0].index("S")
+    beams = set([initial_beam_column])
+
     split_count = 0
+    path_counts = defaultdict(int, {initial_beam_column: 1})
 
-    for row in rows:
-        new_beam_columns = set()
+    for row in rows[1:]:
+        next_row_beams = set()
 
-        for column in beam_columns:
+        for column in beams:
             if row[column] == "^":
                 # Beam is split
+                next_row_beams.add(column - 1)
+                next_row_beams.add(column + 1)
+                path_counts[column - 1] += path_counts[column]
+                path_counts[column + 1] += path_counts[column]
+                path_counts[column] = 0
                 split_count += 1
-                new_beam_columns.add(column - 1)
-                new_beam_columns.add(column + 1)
             else:
                 # Beam continues downwards
-                new_beam_columns.add(column)
+                next_row_beams.add(column)
 
-        beam_columns = new_beam_columns
+        beams = next_row_beams
 
+    total_path_count = sum(path_counts.values())
+    return split_count, total_path_count
+
+
+def part1():
+    split_count, _ = simulate_beams()
     return split_count
 
 
 def part2():
-    pass  # TODO
+    _, path_count = simulate_beams()
+    return path_count
 
 
 if __name__ == "__main__":
